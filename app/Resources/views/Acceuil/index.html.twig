@@ -1,0 +1,234 @@
+{% extends 'base.html.twig' %}
+{% block body %}
+
+   
+<div class="container" ng-app="app" ng-controller="app" ng-init="listeAmis();listeUtilisateurs()">
+
+
+
+
+
+
+    <div class="row">
+           <div class="col-md-12">
+
+   <b>  Ajouter un nouveau ami</b><br>
+
+        <div class="col-md-3">
+
+                                        <select class="form-control" ng-model="nouveauAmi" >
+                                           
+                                            <option value="{[{ utilisateur.id }]}" ng-repeat="(key,utilisateur) in utilisateurs">{[{ utilisateur.username }]}</option>
+                                        </select>
+      
+     
+  </div>
+   <div class="col-md-3">
+     <input type="button" ng-click="AjouterAmi()" class="btn btn-primary" value="Ajouter" name="Ajouter">
+  </div>
+    </div>
+</div>
+<br><br>
+  <div class="row">
+                            <table id="dynamic-table table" class=" table-bordered table table-striped">
+                             <thead>
+                                 <th>Username</th>
+                                 <th>Age</th>
+                                 <th>Famille</th>
+                                 <th>Race</th>
+                                 <th>Nourriture</th>
+                                 <th>Action</th>
+                             </thead>
+                                <tbody ng-repeat="(key, ami) in amis"
+
+                                = (filterList | filter: {   
+username:utilisateurSearch|| undefined
+                                }: true) | start: (currentPage - 1) * perPage | limitTo: perPage"
+                                >
+                                    <tr>
+                                        <td>{[{ami.username}]}</td>
+                                        <td>{[{ami.age}]}</td>
+                                        <td>{[{ami.famille }]}</td>
+                                        <td>{[{ami.race}]}</td>
+                                        <td>{[{ami.nourriture }]} </td>
+                                        <td><button class="btn btn-danger" ng-click="retirerAmi(ami.id)">Retirer</button></td>
+                                    </tr>
+                                    </body>
+                            </table>
+                            {[{amis.length}]} Resultats 
+                        </div>
+                        <div uib-pagination total-items="amis.length" items-per-page="10" next-text="Suivant "
+                             previous-text="Précédent" ng-model="currentPage" max-size="maxSize"
+                             class="pagination-sm pull-right" boundary-link-numbers="true"></div>
+                    </div>
+{#
+    <h1>Liste des amis</h1>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>username</th>
+                <th>email</th>
+                <th>Age</th>
+                <th>Famille</th>
+                <th>Race</th>
+                <th>Nourriture</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for amis in app.user.amis %}
+                <tr>
+                    <td>{{ ami.id }}</td>
+                    <td>{{ ami.username }}</td>
+                    <td>{{ ami.email }}</td>
+                    <td>{{ ami.age }}</td>
+                    <td>{{ ami.famille }}</td>
+                    <td>{{ ami.race }}</td>
+                    <td>{{ ami.nourriture }}</td>
+                    <td>
+                        <a href="{{ path('amis_retirer', { 'id': ami.id }) }}" class="btn btn-danger"><i class="fa fa-trash-o" aria-hidden="true"></i> Supprimer</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    #}
+    </div>
+{% endblock %}
+{% block javascripts %}
+ <script>
+        var app = angular.module('app', ['ngResource', 'datatables', 'ui.bootstrap']);
+        app.controller('app', function ($scope, $resource, $filter) {
+          
+            $scope.loading = false;
+            
+         
+   $scope.retirerAmi = function (id)
+            {
+                console.log(id);
+                var url = "{{path('api_retirer_ami')}}";
+                var postaction = $resource(url, null,
+                        {
+                            'post': {method: 'POST'}
+                        });
+$scope.retirer = {};
+$scope.retirer.id = id;
+                postaction.post(null, $scope.retirer,
+                        function (data) {
+                            $scope.listeAmis();
+                        },
+                        function (error) {
+                            alert("Votre demande est invalide");
+                        });
+            };
+            
+         
+            $scope.AjouterAmi = function ()
+            {
+                var url = "{{path('api_ajouter_ami')}}";
+                var postaction = $resource(url, null,
+                        {
+                            'post': {method: 'POST'}
+                        });
+$scope.nouveau = {};
+$scope.nouveau.nouveauAmi = $scope.nouveauAmi;
+                postaction.post(null, $scope.nouveau,
+                        function (data) {
+                            $("#btn_ajouter_ami").click();
+                            for (var key in $scope.nouveauAmi) {
+                                $scope.nouveauAmi[key] = null;
+                            }
+                            $scope.listeAmis();
+                        },
+                        function (error) {
+                            alert("Votre demande est invalide");
+                        });
+            };
+            
+         
+         
+            $scope.listeUtilisateurs = function ()
+            {
+                $scope.chargment = true;
+                var url = "{{ path('api_utilisateurs')}}";
+                var infos = $resource(url);
+                infos.get(
+                        function (data) {
+                            if(data.utilisateurs)
+                            {
+                            $scope.utilisateurs = data.utilisateurs;
+                            console.log($scope.utilisateurs)
+                            }
+                        },
+                        function (error) {
+                        });
+                $scope.chargment = false;
+            };
+            $scope.listeAmis = function ()
+            {
+                $scope.chargment = true;
+                var url = "{{ path('api_amis')}}";
+                var infos = $resource(url);
+                infos.get(
+                        function (data) {
+                          
+                            //$scope.raceArray = data.matieres;
+                            //$scope.familleArray = data.niveaux;
+                            if(data.utilisateur)
+                            {
+                            $scope.amis = data.utilisateur.amis;
+                            if($scope.amis)
+                            console.log($scope.amis.liste_amis)
+                      
+                                $scope.perPage = 10;
+                                $scope.maxSize = 5;
+                                $scope.setPage = function (pageNo) {
+                                    $scope.currentPage = pageNo;
+                                };
+                                $scope.$watch('searchText', function (term) {
+                                    var obj = term;
+                                    $scope.filterList = $filter('filter')($scope.amis, obj);
+                                    $scope.currentPage = 1;
+                                });
+                            }
+                        },
+                        function (error) {
+                        });
+                $scope.chargment = false;
+            };
+            $scope.pushToArray = function (array, value) {
+                if (array.indexOf(value) === -1) {
+                    array.push(value);
+                }
+                return array;
+            };
+        });
+        app.config(function ($interpolateProvider) {
+            $interpolateProvider.startSymbol('{[{').endSymbol('}]}');
+        });
+        app.filter('unique', function () {
+            return function (collection, keyname) {
+                var output = [],
+                        keys = [];
+                angular.forEach(collection, function (item) {
+                    var key = item[keyname];
+                    if (keys.indexOf(key) === -1) {
+                        keys.push(key);
+                        output.push(item);
+                    }
+                });
+                return output;
+            };
+        });
+        app.filter('start', function () {
+            return function (input, start) {
+                if (!input || !input.length) {
+                    return;
+                }
+                start = +start;
+                return input.slice(start);
+            };
+        });
+    </script>
+{% endblock %}
